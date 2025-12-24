@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presente de Vini - O Jogo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0a0a1a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 960px;
+            height: 640px;
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 100, 200, 0.4);
+        }
+
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* ========== TELA 1 - MENU DAVE THE DIVER STYLE ========== */
+        #screen1 {
+            background-image: url('png_base/menu_tela_1.png');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        /* Menu centralizado estilo Dave the Diver */
+        .dave-menu {
+            position: absolute;
+            left: 50%;
+            top: 70%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .dave-menu-item {
+            background: transparent;
+            border: none;
+            color: #a0c4e8;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            text-align: center;
+            padding: 10px 40px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            letter-spacing: 2px;
+            min-width: 200px;
+        }
+
+        .dave-menu-item::before {
+            content: '▶';
+            position: absolute;
+            left: -25px;
+            opacity: 0;
+            color: #ffcc00;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            text-shadow: 0 0 10px #ffcc00;
+        }
+
+        .dave-menu-item:hover {
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 2px 2px 4px rgba(0, 0, 0, 0.8);
+            transform: translateX(5px);
+        }
+
+        .dave-menu-item:hover::before {
+            opacity: 1;
+            left: -20px;
+        }
+
+        .dave-menu-item.selected {
+            color: #ffcc00;
+            text-shadow: 0 0 20px rgba(255, 204, 0, 0.6), 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        .dave-menu-item.selected::before {
+            opacity: 1;
+            left: -20px;
+        }
+
+        /* Logo/Título centralizado no topo */
+        .game-logo {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-shadow: 
+                3px 3px 6px rgba(0, 0, 0, 0.9),
+                0 0 30px rgba(0, 150, 255, 0.5);
+            letter-spacing: 3px;
+            text-align: center;
+        }
+
+        .game-logo span {
+            color: #00d4ff;
+        }
+
+        /* Versão no canto inferior direito */
+        .version-text {
+            position: absolute;
+            bottom: 20px;
+            right: 30px;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.8rem;
+        }
+
+        /* ========== TELA 2 - DIÁLOGO PERSONAGEM 2 (primeira fala) ========== */
+        #screen2 {
+            background-image: url('png_base/dialogo-personagem2-tela3.png');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        /* ========== TELA 3 - DIÁLOGO PERSONAGEM 1 (primeira fala) ========== */
+        #screen3 {
+            background-image: url('png_base/dialogo-personagem1-tela2.png');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        /* ========== TELA 4 - DIÁLOGO PERSONAGEM 2 (segunda fala) ========== */
+        #screen4 {
+            background-image: url('png_base/dialogo-personagem2-tela3.png');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        /* ========== TELA 5 - DIÁLOGO PERSONAGEM 1 (segunda fala) ========== */
+        #screen5 {
+            background-image: url('png_base/dialogo-personagem1-tela2.png');
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .dialogue-scene {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            position: relative;
+        }
+
+        /* Container dos personagens - ambos aparecem na tela */
+        .characters-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100% - 180px);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 30px;
+            pointer-events: none;
+        }
+
+        /* Personagem 1 - Lado esquerdo */
+        .character-1 {
+            width: 200px;
+            height: 300px;
+            background-image: url('png_base/personagens_para_utilizar.png');
+            background-size: 200% auto;
+            background-position: 0% bottom;
+            background-repeat: no-repeat;
+            filter: drop-shadow(0 5px 20px rgba(0, 0, 0, 0.8));
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        /* Personagem 2 - Lado direito */
+        .character-4 {
+            width: 200px;
+            height: 300px;
+            background-image: url('png_base/personagens_para_utilizar.png');
+            background-size: 200% auto;
+            background-position: 100% bottom;
+            background-repeat: no-repeat;
+            filter: drop-shadow(0 5px 20px rgba(0, 0, 0, 0.8));
+            animation: breathe 3s ease-in-out infinite;
+            animation-delay: 0.5s;
+        }
+
+        /* Efeito para personagem que está falando */
+        .character-1.speaking,
+        .character-4.speaking {
+            filter: drop-shadow(0 0 20px rgba(91, 192, 222, 0.6)) drop-shadow(0 5px 20px rgba(0, 0, 0, 0.8));
+            transform: scale(1.05);
+        }
+
+        /* Personagem que não está falando fica mais escuro */
+        .character-1:not(.speaking),
+        .character-4:not(.speaking) {
+            filter: brightness(0.6) drop-shadow(0 5px 15px rgba(0, 0, 0, 0.8));
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+        }
+
+        .character-1.speaking,
+        .character-4.speaking {
+            animation: breatheSpeaking 2s ease-in-out infinite;
+        }
+
+        @keyframes breatheSpeaking {
+            0%, 100% { transform: scale(1.05); }
+            50% { transform: scale(1.08); }
+        }
+
+        /* Caixa de diálogo estilo Dave the Diver */
+        .dialogue-box {
+            background: linear-gradient(180deg, rgba(20, 40, 60, 0.95) 0%, rgba(10, 25, 40, 0.98) 100%);
+            border-top: 3px solid #3a7ca5;
+            padding: 25px 40px;
+            min-height: 180px;
+            position: relative;
+        }
+
+        .dialogue-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #5bc0de, #3a7ca5, #5bc0de, transparent);
+        }
+
+        .character-name {
+            color: #5bc0de;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-shadow: 0 0 10px rgba(91, 192, 222, 0.5);
+            letter-spacing: 2px;
+        }
+
+        .dialogue-text {
+            color: #e8e8e8;
+            font-size: 1.15rem;
+            line-height: 1.9;
+            min-height: 70px;
+            max-width: 800px;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.15rem;
+            background: #5bc0de;
+            animation: blink 0.6s infinite;
+            margin-left: 3px;
+            vertical-align: middle;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Indicador de continuar */
+        .continue-indicator {
+            position: absolute;
+            bottom: 20px;
+            right: 40px;
+            color: #5bc0de;
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            cursor: pointer;
+            animation: pulse 1.5s infinite;
+        }
+
+        .continue-indicator.show {
+            opacity: 1;
+        }
+
+        .continue-indicator:hover {
+            color: #fff;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+
+        .continue-indicator span {
+            margin-left: 8px;
+            display: inline-block;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
+        }
+
+        /* Indicador de progresso */
+        .progress-indicator {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        .progress-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .progress-dot.active {
+            background: #5bc0de;
+            border-color: #5bc0de;
+            box-shadow: 0 0 15px #5bc0de;
+        }
+
+        .progress-dot.completed {
+            background: #4caf50;
+            border-color: #4caf50;
+            box-shadow: 0 0 10px #4caf50;
+        }
+
+        /* ========== TELA FINAL ========== */
+        .final-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .final-message h2 {
+            font-size: 2.2rem;
+            color: #5bc0de;
+            margin-bottom: 25px;
+            text-shadow: 0 0 20px rgba(91, 192, 222, 0.5);
+        }
+
+        .final-message p {
+            font-size: 1.2rem;
+            color: #e8e8e8;
+            margin-bottom: 40px;
+            line-height: 1.8;
+        }
+
+        .restart-btn {
+            padding: 15px 50px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(180deg, #3a7ca5 0%, #2a5a7a 100%);
+            border: 2px solid #5bc0de;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .restart-btn:hover {
+            background: linear-gradient(180deg, #4a9cc5 0%, #3a7ca5 100%);
+            box-shadow: 0 0 25px rgba(91, 192, 222, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Efeito de bolhas subaquáticas */
+        .bubbles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -50px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent);
+            border-radius: 50%;
+            animation: rise linear infinite;
+            opacity: 0.6;
+        }
+
+        @keyframes rise {
+            0% {
+                bottom: -50px;
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+            }
+            90% {
+                opacity: 0.6;
+            }
+            100% {
+                bottom: 110%;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- TELA 1 - MENU ESTILO DAVE THE DIVER -->
+        <div id="screen1" class="screen active">
+            <div class="game-logo">PRESENTE DE <span>VINI</span></div>
+            
+            <nav class="dave-menu">
+                <button class="dave-menu-item selected" onclick="startGame()">Novo Jogo</button>
+                <button class="dave-menu-item" onclick="continueGame()">Continuar</button>
+                <button class="dave-menu-item" onclick="showOptions()">Opções</button>
+                <button class="dave-menu-item" onclick="showCredits()">Créditos</button>
+                <button class="dave-menu-item" onclick="exitGame()">Sair</button>
+            </nav>
+            
+            <div class="version-text">v1.0.0</div>
+            
+            <!-- Bolhas decorativas -->
+            <div class="bubbles" id="bubbles-menu"></div>
+        </div>
+
+        <!-- TELA 2 - DIÁLOGO PERSONAGEM 2 (primeira fala) -->
+        <div id="screen2" class="screen">
+            <div class="progress-indicator">
+                <div class="progress-dot completed"></div>
+                <div class="progress-dot active"></div>
+                <div class="progress-dot"></div>
+                <div class="progress-dot"></div>
+                <div class="progress-dot"></div>
+            </div>
+            
+            <div class="dialogue-scene">
+                <div class="characters-wrapper">
+                    <div class="character-1"></div>
+                    <div class="character-4 speaking"></div>
+                </div>
+                
+                <div class="dialogue-box">
+                    <div class="character-name">Bi</div>
+                    <p class="dialogue-text" id="dialogue1"></p>
+                    <div class="continue-indicator" id="continue1" onclick="goToScreen3()">
+                        Clique para continuar <span>▶</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA 3 - DIÁLOGO PERSONAGEM 1 (primeira fala) -->
+        <div id="screen3" class="screen">
+            <div class="progress-indicator">
+                <div class="progress-dot completed"></div>
+                <div class="progress-dot completed"></div>
+                <div class="progress-dot active"></div>
+                <div class="progress-dot"></div>
+                <div class="progress-dot"></div>
+            </div>
+            
+            <div class="dialogue-scene">
+                <div class="characters-wrapper">
+                    <div class="character-1 speaking"></div>
+                    <div class="character-4"></div>
+                </div>
+                
+                <div class="dialogue-box">
+                    <div class="character-name">Uiu</div>
+                    <p class="dialogue-text" id="dialogue2"></p>
+                    <div class="continue-indicator" id="continue2" onclick="goToScreen4()">
+                        Clique para continuar <span>▶</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA 4 - DIÁLOGO PERSONAGEM 2 (segunda fala) -->
+        <div id="screen4" class="screen">
+            <div class="progress-indicator">
+                <div class="progress-dot completed"></div>
+                <div class="progress-dot completed"></div>
+                <div class="progress-dot completed"></div>
+                <div class="progress-dot active"></div>
+                <div class="progress-dot"></div>
+            </div>
+            
+            <div class="dialogue-scene">
+                <div class="characters-wrapper">
+                    <div class="character-1"></div>
+                    <div class="character-4 speaking"></div>
+                </div>
+                
+                <div class="dialogue-box">
+                    <div class="character-name">Bi</div>
+                    <p class="dialogue-text" id="dialogue3"></p>
+                    <div class="continue-indicator" id="continue3" onclick="goToScreen5()">
+                        Clique para continuar <span>▶</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA 5 - DIÁLOGO PERSONAGEM 1 (segunda fala) -->
+        <div id="screen5" class="screen">
+            <div class="progress-indicator">
+                <div class="progress-dot completed"></div>
+                <div class="progress-dot completed"></div>
+                <div class="progress-dot completed"></div>
+                <div class="progress-dot completed"></div>
+                <div class="progress-dot active"></div>
+            </div>
+            
+            <div class="dialogue-scene">
+                <div class="characters-wrapper">
+                    <div class="character-1 speaking"></div>
+                    <div class="character-4"></div>
+                </div>
+                
+                <div class="dialogue-box">
+                    <div class="character-name">uiu</div>
+                    <p class="dialogue-text" id="dialogue4"></p>
+                    <div class="continue-indicator" id="continue4" onclick="showFinalScreen()">
+                        Clique para finalizar <span>▶</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Textos dos diálogos (Lorem Ipsum por enquanto)
+        const dialogues = {
+            screen2: "Oi Dav... digo, Uiu! O que faz aqui no Poço Azul Gigante?",
+            screen3: "Eu estava de férias, me mandaram vir aqui...",
+            screen4: "Acho que você veio buscar o seu presente de natal! É um item para você usar sempre que for 'navegar', hehe!",
+            screen5: "Mergulhe para pescá-lo e depois traga para o nosso Sushi Bar! Feliz natal <3"
+        };
+
+        // Criar bolhas decorativas
+        function createBubbles(containerId, count = 15) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            for (let i = 0; i < count; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                const size = Math.random() * 20 + 5;
+                bubble.style.width = size + 'px';
+                bubble.style.height = size + 'px';
+                bubble.style.left = Math.random() * 100 + '%';
+                bubble.style.animationDuration = (Math.random() * 8 + 6) + 's';
+                bubble.style.animationDelay = (Math.random() * 10) + 's';
+                container.appendChild(bubble);
+            }
+        }
+
+        // Inicializar bolhas
+        createBubbles('bubbles-menu', 20);
+
+        // Efeito de digitação (velocidade mais lenta para acompanhar a leitura)
+        function typeText(elementId, text, callback) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+            let index = 0;
+            
+            const cursor = document.createElement('span');
+            cursor.className = 'typing-cursor';
+            
+            function type() {
+                if (index < text.length) {
+                    element.textContent = text.substring(0, index + 1);
+                    element.appendChild(cursor);
+                    index++;
+                    setTimeout(type, 60); // Velocidade mais lenta (60ms por caractere)
+                } else {
+                    cursor.remove();
+                    if (callback) callback();
+                }
+            }
+            
+            type();
+        }
+
+        // Trocar de tela
+        function switchScreen(fromId, toId) {
+            document.getElementById(fromId).classList.remove('active');
+            document.getElementById(toId).classList.add('active');
+        }
+
+        // Menu - efeito de seleção
+        const menuItems = document.querySelectorAll('.dave-menu-item');
+        menuItems.forEach(item => {
+            item.addEventListener('mouseenter', () => {
+                menuItems.forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+            });
+        });
+
+        // Iniciar o jogo
+        function startGame() {
+            switchScreen('screen1', 'screen2');
+            setTimeout(() => {
+                typeText('dialogue1', dialogues.screen2, () => {
+                    document.getElementById('continue1').classList.add('show');
+                });
+            }, 500);
+        }
+
+        // Continuar jogo (placeholder)
+        function continueGame() {
+            alert('Nenhum save encontrado!\nInicie um Novo Jogo.');
+        }
+
+        // Opções (placeholder)
+        function showOptions() {
+            alert('⚙️ Opções\n\nVolume: 100%\nIdioma: Português\nTela Cheia: Desativado');
+        }
+
+        // Ir para tela 3
+        function goToScreen3() {
+            switchScreen('screen2', 'screen3');
+            document.getElementById('continue1').classList.remove('show');
+            setTimeout(() => {
+                typeText('dialogue2', dialogues.screen3, () => {
+                    document.getElementById('continue2').classList.add('show');
+                });
+            }, 500);
+        }
+
+        // Ir para tela 4
+        function goToScreen4() {
+            switchScreen('screen3', 'screen4');
+            document.getElementById('continue2').classList.remove('show');
+            setTimeout(() => {
+                typeText('dialogue3', dialogues.screen4, () => {
+                    document.getElementById('continue3').classList.add('show');
+                });
+            }, 500);
+        }
+
+        // Ir para tela 5
+        function goToScreen5() {
+            switchScreen('screen4', 'screen5');
+            document.getElementById('continue3').classList.remove('show');
+            setTimeout(() => {
+                typeText('dialogue4', dialogues.screen5, () => {
+                    document.getElementById('continue4').classList.add('show');
+                });
+            }, 500);
+        }
+
+        // Mostrar tela final
+        function showFinalScreen() {
+            const screen5 = document.getElementById('screen5');
+            screen5.innerHTML = `
+                <div class="final-screen">
+                    <div class="bubbles" id="bubbles-final"></div>
+                    <div class="final-message">
+                        <h2>🎉 Obrigado por jogar! 🎉</h2>
+                        <p>Esta foi uma experiência especial feita com muito carinho para você!</p>
+                        <button class="restart-btn" onclick="restartGame()">Jogar Novamente</button>
+                    </div>
+                </div>
+            `;
+            createBubbles('bubbles-final', 25);
+        }
+
+        // Reiniciar o jogo
+        function restartGame() {
+            location.reload();
+        }
+
+        // Mostrar créditos
+        function showCredits() {
+            alert('🎮 PRESENTE DE VINI\n\n━━━━━━━━━━━━━━━━━━━━\nCriado com ❤️\npara uma pessoa muito especial!\n━━━━━━━━━━━━━━━━━━━━\n\nDezembro 2025');
+        }
+
+        // Sair do jogo
+        function exitGame() {
+            if (confirm('Tem certeza que deseja sair?')) {
+                document.body.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:100vh;background:#0a0a1a;color:#5bc0de;font-size:1.5rem;">Obrigado por jogar! 👋</div>';
+            }
+        }
+
+        // Suporte a teclado no menu
+        document.addEventListener('keydown', (e) => {
+            const screen1 = document.getElementById('screen1');
+            if (!screen1.classList.contains('active')) return;
+
+            const items = Array.from(menuItems);
+            const currentIndex = items.findIndex(item => item.classList.contains('selected'));
+
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const nextIndex = (currentIndex + 1) % items.length;
+                items.forEach(i => i.classList.remove('selected'));
+                items[nextIndex].classList.add('selected');
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prevIndex = (currentIndex - 1 + items.length) % items.length;
+                items.forEach(i => i.classList.remove('selected'));
+                items[prevIndex].classList.add('selected');
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                items[currentIndex].click();
+            }
+        });
+    </script>
+</body>
+</html>
